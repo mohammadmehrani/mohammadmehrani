@@ -14,7 +14,7 @@ jobs:
       - uses: yoshi389111/github-profile-3d-contrib@0.7.1
         env:
           GITHUB_TOKEN: ${{ secrets.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 }}
-          USERNAME: ${{ github.repository_owner }}
+          USERNAME: ${{ github.mohammadmehrani_mohammadmehrani }}
       - name: Commit & Push
         run: |
           git config user.name github-actions
