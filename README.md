@@ -3,14 +3,7 @@
   mehrani" /></a>
 <br> <a href="https://cooltext.com"></a><a href="https://cooltext.com/Edit-Logo?LogoID=4361936613"></a>
 ### Hi I'm M.Mehrani 👋
- ![](./profile-3d-contrib/profile-green-animate.svg)
-<p align="center" >
-	<picture>
-	  <source media="(prefers-color-scheme: dark)"  srcset="https://raw.githubusercontent.com/<github_user>/<repository>/output-3d-contrib/night.svg" />
-	  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/<github_user>/<repository>/output-3d-contrib/day.svg" />
-	  <img alt="github profile contributions chart"    src="https://raw.githubusercontent.com/<github_user>/<repository>/output-3d-contrib/day.svg" />
-	</picture>
-</p>
+
 <br/>
 <p align="center">
     <a href="#">
@@ -77,7 +70,8 @@ Here are some ideas to get you started:
 ![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat-square&logo=github)
 ![GitLab](https://img.shields.io/badge/-GitLab-FCA121?style=flat-square&logo=gitlab)
 <img alt="[VS Code" src="https://img.shields.io/badge/-VSCode-%23007ACC?style=flat-square&logo=visual-studio-code" />
-
+![Anurag's GitHub stats](https://github-readme-stats-git-masterrstaa-rickstaa.vercel.app/api?username=mohammadmehrani&theme=cobalt2&show_icons=true&card_width=495px)
+![Streak stats](https://github-readme-streak-stats.herokuapp.com/?user=mohammadmehrani&show_icons=true&theme=tokyonight)  
 
 
 ## 🌎 Find me
