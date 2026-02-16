@@ -25,24 +25,51 @@
   </a>
 </p>
 
-## About
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=mohammadmehrani&style=for-the-badge&color=0e75b6" alt="Profile views" />
+  <img src="https://img.shields.io/github/followers/mohammadmehrani?style=for-the-badge&logo=github" alt="Followers" />
+  <img src="https://img.shields.io/badge/Public%20Repos-View%20on%20GitHub-2f81f7?style=for-the-badge&logo=github" alt="Public repos" />
+</p>
+
+## About Me
 
 - Backend and automation focused developer.
+- Building practical systems with clean architecture.
 - Interested in Python, Go, cloud tools, and DevOps workflows.
-- Building practical systems with clean architecture and maintainable code.
 
 ## Tech Stack
 
-<p>
-  <img src="https://skillicons.dev/icons?i=python,go,js,ts,nodejs,docker,linux,git,github,gitlab,postgres,redis,vscode" alt="Tech stack icons" />
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=python,go,js,ts,nodejs,docker,linux,git,github,gitlab,postgres,redis,vscode,nginx,bash" alt="Tech stack icons" />
 </p>
 
-## GitHub Stats
+## Project Performance Report
 
-<p>
-  <img src="https://github-readme-stats.vercel.app/api?username=mohammadmehrani&show_icons=true&theme=transparent&hide_border=true" alt="GitHub stats" />
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=mohammadmehrani&show_icons=true&count_private=true&include_all_commits=true&hide_border=true&theme=transparent" alt="GitHub stats" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=mohammadmehrani&layout=compact&langs_count=10&hide_border=true&theme=transparent" alt="Top languages" />
 </p>
 
-<p>
+<p align="center">
   <img src="https://github-readme-streak-stats.herokuapp.com/?user=mohammadmehrani&theme=transparent&hide_border=true" alt="GitHub streak stats" />
+</p>
+
+<p align="center">
+  <img src="https://github-readme-activity-graph.vercel.app/graph?username=mohammadmehrani&bg_color=0d1117&color=58a6ff&line=3fb950&point=f78166&area=true&hide_border=true" alt="GitHub activity graph" />
+</p>
+
+<p align="center">
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/profile-details?username=mohammadmehrani&theme=github_dark" alt="Profile details" />
+</p>
+
+<p align="center">
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=mohammadmehrani&theme=github_dark" alt="Repos per language" />
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/most-commit-language?username=mohammadmehrani&theme=github_dark" alt="Most commit language" />
+</p>
+
+## Contribution Views
+
+<p align="center">
+  <img src="./profile-3d-contrib/profile-night-rainbow.svg" alt="3D contribution graph" />
+  <img src="./profile-3d-contrib/profile-green.svg" alt="3D contribution graph green" />
 </p>
