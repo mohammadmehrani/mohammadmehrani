@@ -1,24 +1,32 @@
 name: GitHub-Profile-3D-Contrib
 
 on:
-  schedule: # 03:00 JST == 18:00 UTC
+  schedule:
     - cron: "0 18 * * *"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     name: generate-github-profile-3d-contrib
     steps:
-      - uses: actions/checkout@v2
-      - uses: yoshi389111/github-profile-3d-contrib@0.6.0
+      - uses: actions/checkout@v4
+      - name: Clean old 3D graph files
+        run: rm -f profile-3d-contrib/*.svg
+      - uses: yoshi389111/github-profile-3d-contrib@0.7.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USERNAME: ${{ github.repository_owner }}
+          USERNAME: mohammadmehrani
       - name: Commit & Push
         run: |
-          git config user.name mohammadmehrani
-          git config user.email mehrani1992@gmail.com
+          git config user.name "mohammadmehrani"
+          git config user.email "mehrani1992@gmail.com"
           git add -A .
-          git commit -m "generated"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "generated: profile-3d-contrib"
           git push
