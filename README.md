@@ -46,8 +46,8 @@
 ## Project Performance Report
 
 <p align="center">
-  <img loading="lazy" src="https://github-readme-stats.vercel.app/api?username=mohammadmehrani&show_icons=true&count_private=true&include_all_commits=false&hide_border=true&theme=transparent" alt="GitHub stats" />
-  <img loading="lazy" src="https://github-readme-stats.vercel.app/api/top-langs/?username=mohammadmehrani&layout=compact&langs_count=8&hide_border=true&theme=transparent" alt="Top languages" />
+  <img src="https://github-readme-stats.vercel.app/api?username=mohammadmehrani&show_icons=true&count_private=true&include_all_commits=false&hide_border=true&theme=transparent" alt="GitHub stats" />
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=mohammadmehrani&layout=compact&langs_count=8&hide_border=true&theme=transparent" alt="Top languages" />
 </p>
 
 <p align="center">
