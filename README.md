@@ -45,10 +45,10 @@
 
 ## Project Performance Report
 
-<p align="center">
+<!-- <p align="center">
   <img src="https://github-readme-stats.vercel.app/api?username=mohammadmehrani&show_icons=true&count_private=true&include_all_commits=false&hide_border=true&theme=transparent" alt="GitHub stats" />
   <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=mohammadmehrani&layout=compact&langs_count=8&hide_border=true&theme=transparent" alt="Top languages" />
-</p>
+</p> -->
 
 <p align="center">
   <img loading="lazy" src="https://github-readme-streak-stats.herokuapp.com/?user=mohammadmehrani&theme=transparent&hide_border=true" alt="GitHub streak stats" />
