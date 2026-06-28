@@ -1,0 +1,180 @@
+name: 🚀 Extraordinary Pipeline
+
+on:
+  schedule:
+    - cron: "30 6,18 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_3d:
+        description: 'Skip 3D graph generation'
+        required: false
+        default: false
+        type: boolean
+      force_full:
+        description: 'Force full pipeline (ignore caching)'
+        required: false
+        default: false
+        type: boolean
+      custom_message:
+        description: 'Custom commit message'
+        required: false
+        type: string
+
+concurrency:
+  group: extraordinary-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+  N8N_WEBHOOK: ${{ secrets.N8N_WEBHOOK_URL }}
+  DOCKER_REGISTRY: ghcr.io
+
+jobs:
+  orchestrate:
+    name: 🎯 Orchestrator
+    runs-on: ubuntu-latest
+    outputs:
+      should_generate_3d: ${{ steps.decide.outputs.should_generate_3d }}
+      should_update_readme: ${{ steps.decide.outputs.should_update_readme }}
+      activity_score: ${{ steps.analyze.outputs.activity_score }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📊 Analyze recent activity
+        id: analyze
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.force_full }}" = "true" ]; then
+            echo "activity_score=100" >> $GITHUB_OUTPUT
+            echo "Scheduled run - full pipeline"
+          else
+            COMMITS=$(git log --oneline -5 2>/dev/null | wc -l)
+            if [ "$COMMITS" -gt 0 ]; then
+              echo "activity_score=50" >> $GITHUB_OUTPUT
+            else
+              echo "activity_score=10" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: 🧠 Decide pipeline branches
+        id: decide
+        run: |
+          SCORE=${{ steps.analyze.outputs.activity_score }}
+          echo "should_generate_3d=true" >> $GITHUB_OUTPUT
+          if [ "$SCORE" -gt 20 ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_update_readme=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_update_readme=false" >> $GITHUB_OUTPUT
+          fi
+
+  generate-3d:
+    name: 🎨 Generate 3D Graphs
+    needs: orchestrate
+    if: ${{ needs.orchestrate.outputs.should_generate_3d == 'true' && !inputs.skip_3d }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache 3D SVG
+        uses: actions/cache@v4
+        with:
+          path: profile-3d-contrib
+          key: 3d-${{ github.run_id }}
+          restore-keys: |
+            ird-
+
+      - name: Remove old SVGs
+        run: rm -f profile-3d-contrib/*.svg
+
+      - name: Generate 3D contribution graph
+        uses: yoshi389111/github-profile-3d-contrib@0.7.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: mohammadmehrani
+
+      - name: Persist generated files
+        run: |
+          git config user.name "mohammadmehrani"
+          git config user.email "mehrani1992@gmail.com"
+          git add profile-3d-contrib/
+          if git diff --staged --quiet; then
+            echo "No changes in 3D graphs"
+          else
+            git commit -m "generated: profile-3d-contrib ${{ github.event.inputs.custom_message || '' }}"
+          fi
+
+  fetch-blog:
+    name: 📝 Fetch Blog Posts
+    needs: orchestrate
+    if: ${{ needs.orchestrate.outputs.should_update_readme == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update README with blog
+        uses: gautamkrishnar/blog-post-workflow@master
+        with:
+          feed_list: "https://m-mehrani.ir"
+          max_post_count: 5
+          disable_item_validation: true
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-n8n:
+    name: 🔔 Notify n8n
+    needs: [orchestrate, generate-3d, fetch-blog]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send webhook to n8n
+        run: |
+          curl -s -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "event": "pipeline_complete",
+              "repository": "${{ github.repository }}",
+              "run_id": "${{ github.run_id }}",
+              "status": "${{ needs.generate-3d.result == 'success' && 'success' || 'partial' }}",
+              "activity_score": "${{ needs.orchestrate.outputs.activity_score }}",
+              "timestamp": "${{ github.event.repository.updated_at }}",
+              "workflow": "extraordinary-pipeline"
+            }' || echo "n8n webhook not available"
+
+  collect-metrics:
+    name: 📊 Collect & Report
+    needs: [orchestrate, generate-3d, fetch-blog]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gather pipeline metrics
+        id: metrics
+        run: |
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          LAST_COMMIT=$(git log -1 --format="%h - %s")
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
+
+      - name: Create status badge
+        run: |
+          STATUS="${{ needs.generate-3d.result }}"
+          COLOR="brightgreen"
+          if [ "$STATUS" = "failure" ]; then COLOR="red"; fi
+          if [ "$STATUS" = "cancelled" ]; then COLOR="yellow"; fi
+          mkdir -p .github/badges
+          cat > .github/badges/pipeline.json << 'EOF'
+          {
+            "schemaVersion": 1,
+            "label": "pipeline",
+            "message": "${{ steps.metrics.outputs.commit_count }} commits",
+            "color": "$COLOR",
+            "isError": false
+          }
+          EOF

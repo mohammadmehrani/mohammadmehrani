@@ -1,0 +1,95 @@
+name: 💚 Health Monitor
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-n8n:
+    name: Check n8n connectivity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test n8n webhook
+        id: webhook
+        run: |
+          if [ -n "${{ secrets.N8N_WEBHOOK_URL }}" ]; then
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+              -H "Content-Type: application/json" \
+              -d '{"event":"health_check","source":"github-actions","timestamp":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}' \
+              --connect-timeout 10 --max-time 15 || echo "000")
+            echo "n8n_http_status=$STATUS" >> $GITHUB_OUTPUT
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "201" ] || [ "$STATUS" = "202" ] || [ "$STATUS" = "204" ]; then
+              echo "n8n_status=healthy" >> $GITHUB_OUTPUT
+            else
+              echo "n8n_status=unhealthy" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "n8n_http_status=skipped" >> $GITHUB_OUTPUT
+            echo "n8n_status=not_configured" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Test GitHub API
+        id: github
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://api.github.com/users/mohammadmehrani" \
+            -H "Accept: application/vnd.github.v3+json" \
+            --connect-timeout 10 --max-time 15)
+          echo "github_http_status=$HTTP_CODE" >> $GITHUB_OUTPUT
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "github_status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "github_status=unhealthy" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate health report
+        id: report
+        run: |
+          mkdir -p .github/badges
+          N8N="${{ steps.webhook.outputs.n8n_status }}"
+          GH="${{ steps.github.outputs.github_status }}"
+          STATUS="healthy"
+          COLOR="brightgreen"
+
+          if [ "$N8N" = "unhealthy" ] || [ "$GH" = "unhealthy" ]; then
+            STATUS="degraded"
+            COLOR="yellow"
+          fi
+          if [ "$N8N" = "unhealthy" ] && [ "$GH" = "unhealthy" ]; then
+            STATUS="unhealthy"
+            COLOR="red"
+          fi
+
+          cat > .github/badges/health.json << 'EOF'
+          {
+            "schemaVersion": 1,
+            "label": "health",
+            "message": "$STATUS",
+            "color": "$COLOR",
+            "isError": false,
+            "namedLogo": "githubactions"
+          }
+          EOF
+
+          cat > .github/badges/health-report.json << 'REOF'
+          {
+            "status": "$STATUS",
+            "n8n": "$N8N",
+            "github_api": "$GH",
+            "checked_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          REOF
+
+      - name: Commit health status
+        run: |
+          git config user.name "mohammadmehrani"
+          git config user.email "mehrani1992@gmail.com"
+          git add .github/badges/health.json .github/badges/health-report.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes"
+          else
+            git commit -m "updated: health status [skip ci]"
+            git push
+          fi

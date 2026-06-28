@@ -1,0 +1,59 @@
+name: 🏷 Dynamic Badges Generator
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+jobs:
+  generate-badges:
+    name: Generate status badges
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch GitHub stats
+        id: stats
+        run: |
+          RESP=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/users/mohammadmehrani")
+          echo "followers=$(echo $RESP | jq -r '.followers')" >> $GITHUB_OUTPUT
+          echo "repos=$(echo $RESP | jq -r '.public_repos')" >> $GITHUB_OUTPUT
+          echo "gists=$(echo $RESP | jq -r '.public_gists')" >> $GITHUB_OUTPUT
+          echo "created=$(echo $RESP | jq -r '.created_at')" >> $GITHUB_OUTPUT
+
+      - name: Generate dynamic badges
+        run: |
+          mkdir -p .github/badges
+          cat > .github/badges/profile.json << BEOF
+          {
+            "followers": ${{ steps.stats.outputs.followers }},
+            "repos": ${{ steps.stats.outputs.repos }},
+            "gists": ${{ steps.stats.outputs.gists }},
+            "created": "${{ steps.stats.outputs.created }}",
+            "updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          BEOF
+
+      - name: Create shields.io badge URLs
+        run: |
+          mkdir -p .github/badges
+          cat > .github/badges/links.json << 'EOF'
+          {
+            "followers": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mohammadmehrani/mohammadmehrani/main/.github/badges/profile.json&label=Followers&query=$.followers&color=blue&style=for-the-badge",
+            "repos": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mohammadmehrani/mohammadmehrani/main/.github/badges/profile.json&label=Repos&query=$.repos&color=green&style=for-the-badge",
+            "updated": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mohammadmehrani/mohammadmehrani/main/.github/badges/profile.json&label=Updated&query=$.updated&color=orange&style=for-the-badge"
+          }
+          EOF
+
+      - name: Commit badges
+        run: |
+          git config user.name "mohammadmehrani"
+          git config user.email "mehrani1992@gmail.com"
+          git add .github/badges/
+          if git diff --staged --quiet; then
+            echo "No badge changes"
+          else
+            git commit -m "updated: dynamic badges [skip ci]"
+            git push
+          fi

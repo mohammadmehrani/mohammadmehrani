@@ -1,0 +1,27 @@
+# OS
+Thumbs.db
+.DS_Store
+*.swp
+*.swo
+
+# Docker local volumes
+infra/postgres-data/
+infra/redis-data/
+infra/n8n-data/
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Environment
+.env
+*.local
+
+# Logs
+*.log
+nohup.out
+
+# Temp
+tmp/
+temp/

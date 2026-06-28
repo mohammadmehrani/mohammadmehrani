@@ -1,0 +1,216 @@
+{
+  "name": "🤖 Telegram Bot - Interactive Dashboard",
+  "nodes": [
+    {
+      "id": "telegram-trigger",
+      "name": "📱 Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [-250, 300],
+      "parameters": {}
+    },
+    {
+      "id": "switch-command",
+      "name": "🧭 Command Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ ($json.message?.text || '').toLowerCase().trim() }}",
+        "rules": [
+          { "value": "/start", "output": 0, "label": "Start" },
+          { "value": "/stats", "output": 1, "label": "Stats" },
+          { "value": "/activity", "output": 2, "label": "Activity" },
+          { "value": "/streak", "output": 3, "label": "Streak" },
+          { "value": "/help", "output": 4, "label": "Help" },
+          { "value": "/languages", "output": 5, "label": "Languages" }
+        ],
+        "fallbackOutput": 6
+      }
+    },
+    {
+      "id": "cmd-start",
+      "name": "👋 Start Command",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 100],
+      "parameters": {
+        "functionCode": "return {\n  text: `👋 *Welcome to the Extraordinary Profile Bot!*\\n\\nI monitor and analyze GitHub activity for *mohammadmehrani*.\\n\\n📊 *Available Commands:*\\n/stats - Current profile stats\\n/activity - Recent activity analysis\\n/streak - Contribution streak\\n/languages - Top programming languages\\n/help - Show this help\\n\\n⚡ Powered by n8n Extraordinary Workflow Engine`\n};"
+      }
+    },
+    {
+      "id": "cmd-stats",
+      "name": "📊 Stats Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [250, 250],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/users/mohammadmehrani",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeader": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github.v3+json" },
+            { "name": "User-Agent", "value": "n8n-telegram-bot" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cmd-format-stats",
+      "name": "📝 Format Stats Reply",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 250],
+      "parameters": {
+        "functionCode": "const d = $input.first().json;\nreturn { text: `📊 *GitHub Profile Stats*\\n━━━━━━━━━━━━━━━━\\n👤 *${d.login}*\\n📝 ${d.public_repos} public repos\\n👥 ${d.followers} followers · ${d.following} following\\n⭐ ${d.public_gists || 0} gists\\n📅 Since ${new Date(d.created_at).toLocaleDateString()}\\n🔗 ${d.html_url}` };"
+      }
+    },
+    {
+      "id": "cmd-streak",
+      "name": "🔥 Streak Command",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 550],
+      "parameters": {
+        "functionCode": "streak = 0;\ntry {\n  const redis = $node['Redis Get History']?.first()?.json?.data;\n  if (redis) {\n    const parsed = JSON.parse(redis);\n    streak = parsed.streak || 0;\n  }\n} catch(e) {}\n\nconst now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tehran' });\n\nlet msg = `🔥 *Contribution Streak*\\n━━━━━━━━━━━━━━━━`;\nif (streak > 0) {\n  const fireCount = Math.min(Math.floor(streak / 7), 5);\n  const fires = '🔥'.repeat(fireCount);\n  msg += `\\n${fires} *${streak} days*${fires}`;\n  if (streak >= 30) msg += '\\n🏆 *Monthly Champion!*';\n  if (streak >= 7) msg += '\\n📊 *Weekly Streak Achieved!*';\n} else {\n  msg += '\\n💤 *No activity today*\\nTime to code! 💻';\n}\nmsg += `\\n\\n🕐 ${now}`;\n\nreturn { text: msg };"
+      }
+    },
+    {
+      "id": "cmd-languages",
+      "name": "🔤 Languages Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [250, 700],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/users/mohammadmehrani/repos?per_page=100&type=owner",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeader": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github.v3+json" },
+            { "name": "User-Agent", "value": "n8n-telegram-bot" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cmd-format-languages",
+      "name": "📝 Format Languages",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 700],
+      "parameters": {
+        "functionCode": "const repos = $input.all().reduce((acc, item) => {\n  const data = item.json;\n  if (Array.isArray(data)) return acc.concat(data);\n  acc.push(data);\n  return acc;\n}, []);\n\nconst langCount = {};\nrepos.forEach(r => {\n  if (r.language) {\n    langCount[r.language] = (langCount[r.language] || 0) + 1;\n  }\n});\n\nconst sorted = Object.entries(langCount).sort((a, b) => b[1] - a[1]).slice(0, 10);\nconst total = sorted.reduce((s, [_, c]) => s + c, 0);\n\nlet text = `🔤 *Top Languages*\\n━━━━━━━━━━━━━━━━\\n`;\nsorted.forEach(([lang, count]) => {\n  const pct = ((count / total) * 100).toFixed(0);\n  const bar = '█'.repeat(Math.ceil(pct / 10));\n  text += `\\n${lang} ${bar} ${pct}% (${count} repos)`;\n});\n\nreturn { text };"
+      }
+    },
+    {
+      "id": "cmd-help",
+      "name": "❓ Help Command",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 850],
+      "parameters": {
+        "functionCode": "return {\n  text: `🤖 *Extraordinary Bot Help*\\n\\nAvailable commands:\\n/stats - Show GitHub profile stats\\n/activity - Show recent activity analysis\\n/streak - Show contribution streak\\n/languages - Show top programming languages\\n/help - Show this message\\n\\n⚡ Powered by n8n + GitHub Actions + PostgreSQL + Redis`\n};"
+      }
+    },
+    {
+      "id": "cmd-unknown",
+      "name": "❌ Unknown Command",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 1000],
+      "parameters": {
+        "functionCode": "const text = ($json.message?.text || 'unknown').trim();\nreturn { text: `🤷 Unknown command: \\\"${text}\\\"\\n\\nType /help to see available commands.` };"
+      }
+    },
+    {
+      "id": "redis-get-telegram",
+      "name": "💾 Redis Get Streak",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [250, 400],
+      "parameters": {
+        "operation": "get",
+        "key": "profile:history:metrics",
+        "options": {}
+      }
+    },
+    {
+      "id": "telegram-send",
+      "name": "📤 Telegram Send Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "parameters": {
+        "chatId": "={{ $json.message?.chat?.id || $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_webpage_preview": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Command Router", "type": "main", "index": 0 }]]
+    },
+    "Command Router": {
+      "main": [
+        [{ "node": "Start Command", "type": "main", "index": 0 }],
+        [{ "node": "Stats Command", "type": "main", "index": 0 }],
+        [{ "node": "Redis Get Streak", "type": "main", "index": 0 }],
+        [{ "node": "Languages Command", "type": "main", "index": 0 }],
+        [{ "node": "Help Command", "type": "main", "index": 0 }],
+        [{ "node": "Format Languages", "type": "main", "index": 0 }],
+        [{ "node": "Unknown Command", "type": "main", "index": 0 }]
+      ]
+    },
+    "Start Command": {
+      "main": [[{ "node": "Telegram Send Reply", "type": "main", "index": 0 }]]
+    },
+    "Stats Command": {
+      "main": [[{ "node": "Format Stats Reply", "type": "main", "index": 0 }]]
+    },
+    "Format Stats Reply": {
+      "main": [[{ "node": "Telegram Send Reply", "type": "main", "index": 0 }]]
+    },
+    "Redis Get Streak": {
+      "main": [[{ "node": "Streak Command", "type": "main", "index": 0 }]]
+    },
+    "Streak Command": {
+      "main": [[{ "node": "Telegram Send Reply", "type": "main", "index": 0 }]]
+    },
+    "Languages Command": {
+      "main": [[{ "node": "Format Languages", "type": "main", "index": 0 }]]
+    },
+    "Format Languages": {
+      "main": [[{ "node": "Telegram Send Reply", "type": "main", "index": 0 }]]
+    },
+    "Help Command": {
+      "main": [[{ "node": "Telegram Send Reply", "type": "main", "index": 0 }]]
+    },
+    "Unknown Command": {
+      "main": [[{ "node": "Telegram Send Reply", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "versionId": "1.0.0",
+  "active": true,
+  "settings": {
+    "timezone": "Asia/Tehran",
+    "saveManualExecutions": true
+  },
+  "tags": [
+    { "name": "telegram" },
+    { "name": "bot" },
+    { "name": "interactive" }
+  ],
+  "id": "telegram-bot-subworkflow"
+}

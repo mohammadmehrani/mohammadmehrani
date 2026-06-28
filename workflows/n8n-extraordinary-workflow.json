@@ -1,0 +1,569 @@
+{
+  "name": "🚀 Extraordinary Profile Automation",
+  "nodes": [
+    {
+      "id": "trigger-schedule",
+      "name": "⏰ Schedule - Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-400, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cron", "expression": "0 6,18 * * *" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "trigger-github-webhook",
+      "name": "🔗 GitHub Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-400, -100],
+      "parameters": {
+        "path": "github-profile-events",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true,
+          "responseHeaders": {
+            "entries": [{ "name": "X-Powered-By", "value": "n8n" }]
+          }
+        }
+      },
+      "webhookId": "gh-profile-hook"
+    },
+    {
+      "id": "switch-event-type",
+      "name": "🔀 Event Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [-150, -100],
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.headers['x-github-event'] || 'manual' }}",
+        "rules": [
+          { "value": "push", "output": 0, "label": "Push" },
+          { "value": "issues", "output": 1, "label": "Issues" },
+          { "value": "star", "output": 2, "label": "Stars" },
+          { "value": "fork", "output": 3, "label": "Forks" },
+          { "value": "manual", "output": 4, "label": "Scheduled" }
+        ],
+        "fallbackOutput": 5
+      }
+    },
+    {
+      "id": "prepare-github-headers",
+      "name": "🛠 GitHub Auth Setup",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [-150, 500],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "Accept", "value": "application/vnd.github.v3+json" },
+            { "name": "Authorization", "value": "token {{ $env.GITHUB_TOKEN }}" },
+            { "name": "User-Agent", "value": "n8n-profile-bot" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-github-profile",
+      "name": "📡 GitHub API - Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [50, 500],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/users/mohammadmehrani",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "={{ $node['GitHub Auth Setup'].json['Accept'] }}" },
+            { "name": "Authorization", "value": "={{ $node['GitHub Auth Setup'].json['Authorization'] }}" },
+            { "name": "User-Agent", "value": "={{ $node['GitHub Auth Setup'].json['User-Agent'] }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-repos",
+      "name": "📡 GitHub API - Repos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [50, 700],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/users/mohammadmehrani/repos?sort=updated&per_page=20&type=owner",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "={{ $node['GitHub Auth Setup'].json['Accept'] }}" },
+            { "name": "Authorization", "value": "={{ $node['GitHub Auth Setup'].json['Authorization'] }}" },
+            { "name": "User-Agent", "value": "={{ $node['GitHub Auth Setup'].json['User-Agent'] }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-events",
+      "name": "📡 GitHub API - Events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [50, 900],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/users/mohammadmehrani/events?per_page=30",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "={{ $node['GitHub Auth Setup'].json['Accept'] }}" },
+            { "name": "Authorization", "value": "={{ $node['GitHub Auth Setup'].json['Authorization'] }}" },
+            { "name": "User-Agent", "value": "={{ $node['GitHub Auth Setup'].json['User-Agent'] }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "function-process-profile",
+      "name": "🧠 Process Profile Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [300, 500],
+      "parameters": {
+        "functionCode": "// =====================\n// Process GitHub Profile\n// =====================\nconst profile = $input.first().json;\n\nconst stats = {\n  name: profile.name || 'mohammadmehrani',\n  login: profile.login,\n  bio: profile.bio,\n  public_repos: profile.public_repos,\n  followers: profile.followers,\n  following: profile.following,\n  total_stars: 0,\n  total_forks: 0,\n  top_languages: {},\n  created_at: profile.created_at,\n  updated_at: new Date().toISOString(),\n  profile_url: profile.html_url,\n  avatar_url: profile.avatar_url,\n  blog: profile.blog,\n  location: profile.location,\n  twitter: profile.twitter_username,\n  hireable: profile.hireable\n};\n\nconst repos = $node['GitHub API - Repos'].all()[0].json;\nif (Array.isArray(repos)) {\n  repos.forEach(repo => {\n    stats.total_stars += repo.stargazers_count || 0;\n    stats.total_forks += repo.forks_count || 0;\n    if (repo.language) {\n      stats.top_languages[repo.language] = (stats.top_languages[repo.language] || 0) + 1;\n    }\n  });\n}\n\n// Sort languages by count\nstats.top_languages = Object.entries(stats.top_languages)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 8)\n  .reduce((acc, [lang, count]) => {\n    acc[lang] = count;\n    return acc;\n  }, {});\n\nreturn { stats };"
+      }
+    },
+    {
+      "id": "function-analyze-activity",
+      "name": "🧠 Analyze Activity",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [300, 900],
+      "parameters": {
+        "functionCode": "// =====================\n// Analyze GitHub Events\n// =====================\nconst events = $input.all();\nconst analysis = {\n  total_events: events.length,\n  event_types: {},\n  top_repos: {},\n  recent_activity: [],\n  push_count: 0,\n  pr_count: 0,\n  issue_count: 0,\n  review_count: 0,\n  daily_activity: null\n};\n\n// Process flat array of events\nconst flatEvents = events.reduce((acc, item) => {\n  const data = item.json;\n  if (Array.isArray(data)) {\n    return acc.concat(data);\n  }\n  if (data.type) {\n    acc.push(data);\n  }\n  return acc;\n}, []);\n\nflatEvents.forEach(event => {\n  // Count event types\n  analysis.event_types[event.type] = (analysis.event_types[event.type] || 0) + 1;\n\n  // Count specific types\n  if (event.type === 'PushEvent') analysis.push_count++;\n  if (event.type === 'PullRequestEvent') analysis.pr_count++;\n  if (event.type === 'IssuesEvent') analysis.issue_count++;\n  if (event.type === 'PullRequestReviewEvent') analysis.review_count++;\n\n  // Track repo activity\n  const repoName = event.repo?.name || 'unknown';\n  analysis.top_repos[repoName] = (analysis.top_repos[repoName] || 0) + 1;\n\n  // Collect recent activity\n  if (analysis.recent_activity.length < 5) {\n    analysis.recent_activity.push({\n      type: event.type,\n      repo: repoName,\n      time: event.created_at,\n      action: event.payload?.action\n    });\n  }\n});\n\n// Sort repos by activity\nanalysis.top_repos = Object.entries(analysis.top_repos)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 5)\n  .reduce((acc, [repo, count]) => { acc[repo] = count; return acc; }, {});\n\n// Calculate daily intensity\nconst now = new Date();\nconst todayEvents = flatEvents.filter(e => {\n  const d = new Date(e.created_at);\n  return d.toDateString() === now.toDateString();\n});\nanalysis.daily_activity = todayEvents.length;\n\nanalysis.score = Math.min(100, (\n  analysis.push_count * 2 +\n  analysis.pr_count * 5 +\n  analysis.issue_count * 3 +\n  analysis.review_count * 4 +\n  Math.min(analysis.daily_activity * 2, 20)\n));\n\nreturn { analysis };"
+      }
+    },
+    {
+      "id": "redis-cache-state",
+      "name": "💾 Redis Cache State",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [550, 500],
+      "parameters": {
+        "operation": "set",
+        "key": "profile:state:latest",
+        "value": "={{ JSON.stringify($json) }}",
+        "options": {
+          "expire": 86400
+        }
+      }
+    },
+    {
+      "id": "redis-get-history",
+      "name": "💾 Redis Get History",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [550, 700],
+      "parameters": {
+        "operation": "get",
+        "key": "profile:history:metrics",
+        "options": {}
+      }
+    },
+    {
+      "id": "function-generate-insights",
+      "name": "📊 Generate Insights",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 600],
+      "parameters": {
+        "functionCode": "// =====================\n// Generate Smart Insights\n// =====================\nconst stats = $node['Process Profile Data'].first().json.stats;\nconst analysis = $node['Analyze Activity'].first().json.analysis;\nconst historyRaw = $node['Redis Get History'].first().json?.data;\n\nconst history = historyRaw ? JSON.parse(historyRaw) : {\n  snapshots: [],\n  streak: 0,\n  best_day: 0,\n  last_updated: null\n};\n\n// Update history\nhistory.snapshots.push({\n  timestamp: new Date().toISOString(),\n  followers: stats.followers,\n  public_repos: stats.public_repos,\n  total_stars: stats.total_stars,\n  activity_score: analysis.score,\n  daily_events: analysis.daily_activity\n});\n\n// Keep last 90 snapshots\nif (history.snapshots.length > 90) {\n  history.snapshots = history.snapshots.slice(-90);\n}\n\n// Calculate streak\nconst today = new Date().toDateString();\nif (analysis.daily_activity > 0) {\n  history.streak++;\n} else {\n  history.streak = 0;\n}\n\n// Track best day\nif (analysis.daily_activity > history.best_day) {\n  history.best_day = analysis.daily_activity;\n}\n\nhistory.last_updated = new Date().toISOString();\n\n// Generate insights\nconst insights = [];\n\nif (stats.followers > 0 && history.snapshots.length > 1) {\n  const prev = history.snapshots[history.snapshots.length - 2];\n  const followerGrowth = stats.followers - prev.followers;\n  if (followerGrowth > 0) {\n    insights.push(`📈 Follower growth: +${followerGrowth} since last check`);\n  }\n}\n\nif (analysis.score >= 80) {\n  insights.push('🔥 High activity day! Keep up the momentum!');\n} else if (analysis.score <= 20) {\n  insights.push('💤 Low activity detected. Time to code!');\n}\n\nif (history.streak > 0 && history.streak % 7 === 0) {\n  insights.push(`🎯 ${history.streak}-day streak! Consistency is key!`);\n}\n\n// Language insight\nconst langs = Object.keys(stats.top_languages);\nif (langs.length > 0) {\n  insights.push(`🔤 Top language: ${langs[0]} (${stats.top_languages[langs[0]]} repos)`);\n}\n\nreturn { insights, history };"
+      }
+    },
+    {
+      "id": "redis-save-history",
+      "name": "💾 Redis Save History",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1050, 600],
+      "parameters": {
+        "operation": "set",
+        "key": "profile:history:metrics",
+        "value": "={{ JSON.stringify($json.history) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "function-format-readme",
+      "name": "📝 Format README Stats",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1300, 450],
+      "parameters": {
+        "functionCode": "// =====================\n// Format Stats for README\n// =====================\nconst stats = $node['Process Profile Data'].first().json.stats;\nconst analysis = $node['Analyze Activity'].first().json.analysis;\nconst insights = $node['Generate Insights'].first().json.insights;\n\n// Generate dynamic stats section\nlet statsSection = `\n### 📊 GitHub Stats Snapshot\n\n`;\n\nstatsSection += `| Metric | Value |\\n|--------|-------|\\n`;\nstatsSection += `| 📦 Repositories | ${stats.public_repos} |\\n`;\nstatsSection += `| ⭐ Total Stars | ${stats.total_stars} |\\n`;\nstatsSection += `| 🍴 Total Forks | ${stats.total_forks} |\\n`;\nstatsSection += `| 👥 Followers | ${stats.followers} |\\n`;\nstatsSection += `| 🔄 Following | ${stats.following} |\\n`;\nstatsSection += `| 📨 Events Today | ${analysis.daily_activity} |\\n`;\nstatsSection += `| ⚡ Activity Score | ${analysis.score}/100 |\\n`;\nstatsSection += `| 🔥 Streak | ${insights.history ? insights.history.streak : 0} days |\\n`;\n\nif (Object.keys(stats.top_languages).length > 0) {\n  statsSection += `\\n**Top Languages:**\\n`;\n  Object.entries(stats.top_languages).forEach(([lang, count]) => {\n    const bar = '█'.repeat(Math.min(count, 10));\n    statsSection += `- ${lang}: ${bar} (${count})\\n`;\n  });\n}\n\nreturn { stats_markdown: statsSection, generated_at: new Date().toISOString() };"
+      }
+    },
+    {
+      "id": "function-generate-workflow-badge",
+      "name": "🏷 Generate Badge JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1300, 650],
+      "parameters": {
+        "functionCode": "// =====================\n// Generate Dynamic Badge\n// =====================\nconst stats = $node['Process Profile Data'].first().json.stats;\nconst analysis = $node['Analyze Activity'].first().json.analysis;\n\nconst badgeData = {\n  schemaVersion: 1,\n  label: 'Activity',\n  message: analysis.score >= 80 ? 'Very Active' :\n           analysis.score >= 50 ? 'Active' :\n           analysis.score >= 20 ? 'Moderate' : 'Quiet',\n  color: analysis.score >= 80 ? 'brightgreen' :\n         analysis.score >= 50 ? 'green' :\n         analysis.score >= 20 ? 'yellow' : 'lightgrey',\n  isError: false,\n  namedLogo: 'github',\n  logoSized: true\n};\n\nreturn { badge: badgeData };"
+      }
+    },
+    {
+      "id": "if-should-update-readme",
+      "name": "❓ Should Update README?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1550, 500],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "check-daily-activity",
+              "leftValue": "={{ $node['Analyze Activity'].first().json.analysis.score }}",
+              "rightValue": 10,
+              "operator": { "type": "number", "operation": "largerEqual" }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "telegram-notify",
+      "name": "📱 Telegram Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1800, 300],
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🚀 *GitHub Profile Report*\n━━━━━━━━━━━━━━━━\n📊 *Stats:*\n• Repos: {{ $node['Process Profile Data'].first().json.stats.public_repos }}\n• Stars: {{ $node['Process Profile Data'].first().json.stats.total_stars }}\n• Followers: {{ $node['Process Profile Data'].first().json.stats.followers }}\n• Events Today: {{ $node['Analyze Activity'].first().json.analysis.daily_activity }}\n⚡ Score: {{ $node['Analyze Activity'].first().json.analysis.score }}/100\n🔥 Streak: {{ $node['Generate Insights'].first().json.insights.length > 0 ? 'Active' : 'Inactive' }}\n\n{{ $node['Generate Insights'].first().json.insights.join('\\n') }}\n\n⏰ {{ new Date().toLocaleString('en-US', { timeZone: 'Asia/Tehran' }) }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_webpage_preview": true
+        }
+      }
+    },
+    {
+      "id": "postgres-save-snapshot",
+      "name": "🗄 PostgreSQL Save Snapshot",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1800, 500],
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "profile_snapshots",
+        "dataMode": "defineBelow",
+        "values": {
+          "values": [
+            { "column": "snapshot_date", "value": "={{ new Date().toISOString().split('T')[0] }}" },
+            { "column": "followers", "value": "={{ $node['Process Profile Data'].first().json.stats.followers }}" },
+            { "column": "public_repos", "value": "={{ $node['Process Profile Data'].first().json.stats.public_repos }}" },
+            { "column": "total_stars", "value": "={{ $node['Process Profile Data'].first().json.stats.total_stars }}" },
+            { "column": "total_forks", "value": "={{ $node['Process Profile Data'].first().json.stats.total_forks }}" },
+            { "column": "activity_score", "value": "={{ $node['Analyze Activity'].first().json.analysis.score }}" },
+            { "column": "daily_events", "value": "={{ $node['Analyze Activity'].first().json.analysis.daily_activity }}" },
+            { "column": "insights_json", "value": "={{ $node['Generate Insights'].first().json.insights | toJson }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "function-merge-streams",
+      "name": "🔀 Merge Data Streams",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1050, 450],
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition"
+      }
+    },
+    {
+      "id": "error-handler",
+      "name": "⚠️ Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [300, 1200],
+      "parameters": {}
+    },
+    {
+      "id": "function-error-recovery",
+      "name": "🔧 Error Recovery",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [550, 1200],
+      "parameters": {
+        "functionCode": "// =====================\n// Error Recovery Logic\n// =====================\nconst error = $input.first().json;\nconst errorMessage = error.error?.message || JSON.stringify(error);\n\nconsole.error('[ERROR]', errorMessage);\n\n// Try to notify via Telegram if possible\nreturn {\n  error: true,\n  message: errorMessage,\n  timestamp: new Date().toISOString(),\n  workflow: $getWorkflowStaticData('global').id || 'unknown',\n  retry_count: ($getWorkflowStaticData('global').retry_count || 0) + 1\n};"
+      }
+    },
+    {
+      "id": "telegram-error-notify",
+      "name": "📱 Error Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [800, 1200],
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🚨 *Workflow Error*\\n`{{ $node['Error Recovery'].first().json.message }}`\\n⏰ {{ $node['Error Recovery'].first().json.timestamp }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "id": "noop-push",
+      "name": "⏭ Push Handler",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [100, -200],
+      "parameters": {}
+    },
+    {
+      "id": "noop-issue",
+      "name": "⏭ Issue Handler",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [100, -50],
+      "parameters": {}
+    },
+    {
+      "id": "noop-star",
+      "name": "⭐ Thank for Star",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [100, 80],
+      "parameters": {}
+    },
+    {
+      "id": "noop-fork",
+      "name": "🍴 Fork Handler",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "parameters": {}
+    },
+    {
+      "id": "code-python-exec",
+      "name": "🐍 Python Executor",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1550, 750],
+      "parameters": {
+        "command": "python3",
+        "arguments": "/backup/scripts/generate_profile_report.py",
+        "options": {}
+      }
+    },
+    {
+      "id": "if-postgres-result",
+      "name": "❓ PG Result Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2050, 500],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "check-insert",
+              "leftValue": "={{ $node['PostgreSQL Save Snapshot'].first().json }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "isNotEmpty" }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "noop-success",
+      "name": "✅ Success",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2300, 450],
+      "parameters": {}
+    },
+    {
+      "id": "noop-fail",
+      "name": "❌ Database Error",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2300, 600],
+      "parameters": {}
+    },
+    {
+      "id": "function-fetch-blog",
+      "name": "📝 Fetch Blog Posts",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [800, 100],
+      "parameters": {
+        "functionCode": "// =====================\n// Fetch Blog Posts\n// =====================\nconst blogUrl = 'https://m-mehrani.ir';\n\n// Note: In production, use HTTP Request node\n// to fetch and parse the RSS feed\nreturn {\n  blog: {\n    url: blogUrl,\n    last_fetched: new Date().toISOString(),\n    title: 'Mohammad Mehrani Blog'\n  }\n};"
+      }
+    }
+  ],
+  "connections": {
+    "Schedule - Daily": {
+      "main": [
+        [{ "node": "GitHub Auth Setup", "type": "main", "index": 0 }]
+      ]
+    },
+    "GitHub Webhook": {
+      "main": [
+        [{ "node": "Event Router", "type": "main", "index": 0 }]
+      ]
+    },
+    "Event Router": {
+      "main": [
+        [{ "node": "Push Handler", "type": "main", "index": 0 }],
+        [{ "node": "Issue Handler", "type": "main", "index": 0 }],
+        [{ "node": "Thank for Star", "type": "main", "index": 0 }],
+        [{ "node": "Fork Handler", "type": "main", "index": 0 }],
+        [{ "node": "GitHub Auth Setup", "type": "main", "index": 0 }],
+        [{ "node": "GitHub Auth Setup", "type": "main", "index": 0 }]
+      ]
+    },
+    "GitHub Auth Setup": {
+      "main": [
+        [{ "node": "GitHub API - Profile", "type": "main", "index": 0 },
+         { "node": "GitHub API - Repos", "type": "main", "index": 0 },
+         { "node": "GitHub API - Events", "type": "main", "index": 0 },
+         { "node": "Fetch Blog Posts", "type": "main", "index": 0 }]
+      ]
+    },
+    "GitHub API - Profile": {
+      "main": [
+        [{ "node": "Process Profile Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "GitHub API - Repos": {
+      "main": [
+        [{ "node": "Process Profile Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "GitHub API - Events": {
+      "main": [
+        [{ "node": "Analyze Activity", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Blog Posts": {
+      "main": [
+        [{ "node": "Merge Data Streams", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process Profile Data": {
+      "main": [
+        [{ "node": "Redis Cache State", "type": "main", "index": 0 },
+         { "node": "Merge Data Streams", "type": "main", "index": 0 }]
+      ]
+    },
+    "Analyze Activity": {
+      "main": [
+        [{ "node": "Redis Get History", "type": "main", "index": 0 },
+         { "node": "Merge Data Streams", "type": "main", "index": 0 }]
+      ]
+    },
+    "Redis Cache State": {
+      "main": [
+        [{ "node": "Redis Get History", "type": "main", "index": 0 }]
+      ]
+    },
+    "Redis Get History": {
+      "main": [
+        [{ "node": "Generate Insights", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Insights": {
+      "main": [
+        [{ "node": "Redis Save History", "type": "main", "index": 0 }]
+      ]
+    },
+    "Redis Save History": {
+      "main": [
+        [{ "node": "Merge Data Streams", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge Data Streams": {
+      "main": [
+        [{ "node": "Format README Stats", "type": "main", "index": 0 },
+         { "node": "Generate Badge JSON", "type": "main", "index": 0 }]
+      ]
+    },
+    "Format README Stats": {
+      "main": [
+        [{ "node": "Should Update README?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Badge JSON": {
+      "main": [
+        [{ "node": "Python Executor", "type": "main", "index": 0 }]
+      ]
+    },
+    "Python Executor": {
+      "main": [
+        [{ "node": "Should Update README?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Should Update README?": {
+      "main": [
+        [{ "node": "Telegram Notification", "type": "main", "index": 0 },
+         { "node": "PostgreSQL Save Snapshot", "type": "main", "index": 0 }]
+      ]
+    },
+    "Telegram Notification": {
+      "main": [
+        [{ "node": "PostgreSQL Save Snapshot", "type": "main", "index": 0 }]
+      ]
+    },
+    "PostgreSQL Save Snapshot": {
+      "main": [
+        [{ "node": "PG Result Check", "type": "main", "index": 0 }]
+      ]
+    },
+    "PG Result Check": {
+      "main": [
+        [{ "node": "Success", "type": "main", "index": 0 }],
+        [{ "node": "Database Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [{ "node": "Error Recovery", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Recovery": {
+      "main": [
+        [{ "node": "Error Alert", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "1.0.0",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Tehran",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    { "name": "automation" },
+    { "name": "github-profile" },
+    { "name": "monitoring" },
+    { "name": "devops" }
+  ],
+  "id": "profile-extraordinary-main"
+}

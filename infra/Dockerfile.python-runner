@@ -1,0 +1,23 @@
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir \
+    requests==2.31.0 \
+    pyyaml==6.0.1 \
+    redis==5.0.0 \
+    psycopg2-binary==2.9.9 \
+    python-dotenv==1.0.0
+
+COPY scripts/generate_profile_report.py /scripts/generate_profile_report.py
+COPY infra/init-schema.sql /scripts/init-schema.sql
+
+WORKDIR /scripts
+
+RUN python3 -c "import requests, yaml, redis, psycopg2, dotenv; print('✅ All Python dependencies loaded')"
+
+ENTRYPOINT ["python3"]

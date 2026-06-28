@@ -1,18 +1,58 @@
-name: Latest blog post workflow
+name: Latest Blog Post Workflow
+
 on:
-  schedule: # Run workflow automatically
-    - cron: '0 0/6 * * *' # Runs every day
-  workflow_dispatch: # Run workflow manually (without waiting for the cron to be called), through the Github Actions Workflow page directly
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      feed_url:
+        description: 'Blog RSS/Atom feed URL'
+        required: false
+        default: 'https://m-mehrani.ir'
+      max_posts:
+        description: 'Maximum number of posts to show'
+        required: false
+        default: '5'
+        type: choice
+        options:
+          - '3'
+          - '5'
+          - '10'
 
 jobs:
   update-readme-with-blog:
-    name: Update this repo's README with latest blog posts
+    name: Update README with latest blog posts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Pull in dev.to posts
+        uses: actions/checkout@v4
+
+      - name: Pull in blog posts
         uses: gautamkrishnar/blog-post-workflow@master
         with:
-          feed_list: "https://m-mehrani.ir"
+          feed_list: "${{ github.event.inputs.feed_url || 'https://m-mehrani.ir' }}"
+          max_post_count: "${{ github.event.inputs.max_posts || '5' }}"
           disable_item_validation: true
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          comment_tag_name: "BLOG-POST-LIST"
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if git diff --staged --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify n8n on new blog posts
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          curl -s -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "event": "blog_posts_updated",
+              "repository": "${{ github.repository }}",
+              "feed": "${{ github.event.inputs.feed_url || 'https://m-mehrani.ir' }}",
+              "timestamp": "${{ github.event.repository.updated_at }}"
+            }' || echo "Webhook notification skipped"
