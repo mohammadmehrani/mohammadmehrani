@@ -77,4 +77,5 @@ jobs:
             exit 0
           fi
           git commit -m "generated: profile-3d-contrib [skip ci]"
+          git pull --rebase
           git push

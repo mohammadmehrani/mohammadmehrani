@@ -107,6 +107,7 @@ jobs:
             echo "No changes in 3D graphs"
           else
             git commit -m "generated: profile-3d-contrib ${{ github.event.inputs.custom_message || '' }}"
+            git pull --rebase
             git push
           fi
 

@@ -57,5 +57,6 @@ jobs:
             echo "No badge changes"
           else
             git commit -m "updated: dynamic badges [skip ci]"
+            git pull --rebase
             git push
           fi
