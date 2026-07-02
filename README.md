@@ -210,8 +210,9 @@ docker build -f infra/Dockerfile.python-runner -t profile-python-runner .
 ## Contribution Views
 
 <p align="center">
-  <img src="./profile-3d-contrib/profile-green-animate.svg" alt="3D contribution graph green" />
+  <img src="./profile-3d-contrib/profile-south-season-animate.svg" alt="3D contribution graph green" />
 </p>
+
 
 
 
