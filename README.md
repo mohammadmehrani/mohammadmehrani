@@ -1,7 +1,7 @@
-# Mohammad Mehrani
+﻿# Mohammad Mehrani
 
 <p align="center">
-  <img src="./profile-3d-contrib/profile-night-rainbow.svg" alt="3D contribution graph" />
+  <img src="./profile-3d-contrib/profile-night-view.svg" alt="3D contribution graph" />
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fmohammadmehrani&label=Profile%20Views&countColor=%230e75b6&style=flat-square" alt="Profile views" />
+  <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fmohammadmehrani&label=Profile%20Views&countColor=%230e75b6&style=for-the-badge" alt="Profile views" />
   <img src="https://img.shields.io/github/followers/mohammadmehrani?style=for-the-badge&logo=github" alt="Followers" />
   <img src="https://img.shields.io/github/stars/mohammadmehrani?style=for-the-badge&logo=github" alt="Stars" />
 </p>
@@ -210,5 +210,7 @@ docker build -f infra/Dockerfile.python-runner -t profile-python-runner .
 ## Contribution Views
 
 <p align="center">
-  <img src="./profile-3d-contrib/profile-south-season-animate.svg" alt="3D contribution graph green" />
+  <img src="./profile-3d-contrib/profile-night-view.svg" alt="3D contribution graph green" />
 </p>
+
+
