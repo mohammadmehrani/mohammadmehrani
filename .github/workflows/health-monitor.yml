@@ -9,6 +9,8 @@ jobs:
   check-n8n:
     name: Check n8n connectivity
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Test n8n webhook
         id: webhook
