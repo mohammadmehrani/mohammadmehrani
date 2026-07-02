@@ -1,7 +1,7 @@
 ﻿# Mohammad Mehrani
 
 <p align="center">
-  <img src="./profile-3d-contrib/profile-night-view.svg" alt="3D contribution graph" />
+  <img src="./profile-3d-contrib/profile-night-rainbow.svg" alt="3D contribution graph" />
 </p>
 
 <p align="center">
@@ -210,7 +210,9 @@ docker build -f infra/Dockerfile.python-runner -t profile-python-runner .
 ## Contribution Views
 
 <p align="center">
-  <img src="./profile-3d-contrib/profile-night-view.svg" alt="3D contribution graph green" />
+  <img src="./profile-3d-contrib/profile-green-animate.svg" alt="3D contribution graph green" />
 </p>
+
+
 
 
