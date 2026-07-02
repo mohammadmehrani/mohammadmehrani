@@ -71,6 +71,12 @@
   <img src="https://github-profile-trophy.vercel.app/?username=mohammadmehrani&theme=darkhub&no-frame=true&column=4&margin-w=15" alt="GitHub Trophies" />
 </p>
 
+<p align="center">
+  <a href="https://mohammadmehrani.github.io/achievements">
+    <img src="https://img.shields.io/badge/Achievements-View%20All-6f42c1?style=for-the-badge&logo=github&logoColor=white" alt="Achievements" />
+  </a>
+</p>
+
 ## ⚡ Extraordinary Automation Pipeline
 
 <p align="center">
