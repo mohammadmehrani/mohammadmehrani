@@ -411,7 +411,7 @@
       "typeVersion": 1,
       "position": [800, 100],
       "parameters": {
-        "functionCode": "// =====================\n// Fetch Blog Posts\n// =====================\nconst blogUrl = 'https://m-mehrani.ir';\n\n// Note: In production, use HTTP Request node\n// to fetch and parse the RSS feed\nreturn {\n  blog: {\n    url: blogUrl,\n    last_fetched: new Date().toISOString(),\n    title: 'Mohammad Mehrani Blog'\n  }\n};"
+        "functionCode": "// =====================\n// Fetch Blog Posts\n// =====================\nconst blogUrl = 'https://iodeck.ir';\n\n// Note: In production, use HTTP Request node\n// to fetch and parse the RSS feed\nreturn {\n  blog: {\n    url: blogUrl,\n    last_fetched: new Date().toISOString(),\n    title: 'Mohammad Mehrani Blog'\n  }\n};"
       }
     }
   ],

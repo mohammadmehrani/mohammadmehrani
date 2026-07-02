@@ -8,7 +8,7 @@ on:
       feed_url:
         description: 'Blog RSS/Atom feed URL'
         required: false
-        default: 'https://m-mehrani.ir'
+        default: 'https://iodeck.ir'
       max_posts:
         description: 'Maximum number of posts to show'
         required: false
@@ -30,7 +30,7 @@ jobs:
       - name: Pull in blog posts
         uses: gautamkrishnar/blog-post-workflow@master
         with:
-          feed_list: "${{ github.event.inputs.feed_url || 'https://m-mehrani.ir' }}"
+          feed_list: "${{ github.event.inputs.feed_url || 'https://iodeck.ir' }}"
           max_post_count: "${{ github.event.inputs.max_posts || '5' }}"
           disable_item_validation: true
           gh_token: ${{ secrets.GITHUB_TOKEN }}
@@ -53,6 +53,6 @@ jobs:
             -d '{
               "event": "blog_posts_updated",
               "repository": "${{ github.repository }}",
-              "feed": "${{ github.event.inputs.feed_url || 'https://m-mehrani.ir' }}",
+              "feed": "${{ github.event.inputs.feed_url || 'https://iodeck.ir' }}",
               "timestamp": "${{ github.event.repository.updated_at }}"
             }' || echo "Webhook notification skipped"

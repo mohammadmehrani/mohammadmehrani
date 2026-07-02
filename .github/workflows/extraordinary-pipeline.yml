@@ -119,7 +119,7 @@ jobs:
       - name: Update README with blog
         uses: gautamkrishnar/blog-post-workflow@master
         with:
-          feed_list: "https://m-mehrani.ir"
+          feed_list: "https://iodeck.ir"
           max_post_count: 5
           disable_item_validation: true
           gh_token: ${{ secrets.GITHUB_TOKEN }}

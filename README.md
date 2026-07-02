@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/Telegram-mohammad__mehrani-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram" />
   </a>
   <a href="https://iodeck.ir/">
-    <img src="https://img.shields.io/badge/Blog-m--mehrani.ir-222222?style=for-the-badge&logo=hashnode&logoColor=white" alt="Blog" />
+    <img src="https://img.shields.io/badge/Blog-iodeck.ir-222222?style=for-the-badge&logo=hashnode&logoColor=white" alt="Blog" />
   </a>
   <a href="mailto:mehrani1992@gmail.com">
     <img src="https://img.shields.io/badge/Email-mehrani1992%40gmail.com-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email" />
@@ -26,9 +26,9 @@
 </p>
 
 <p align="center">
-  <img src="https://komarev.com/ghpvc/?username=mohammadmehrani&style=for-the-badge&color=0e75b6" alt="Profile views" />
+  <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fmohammadmehrani&label=Profile%20Views&countColor=%230e75b6&style=flat-square" alt="Profile views" />
   <img src="https://img.shields.io/github/followers/mohammadmehrani?style=for-the-badge&logo=github" alt="Followers" />
-  <img src="https://img.shields.io/badge/Public%20Repos-View%20on%20GitHub-2f81f7?style=for-the-badge&logo=github" alt="Public repos" />
+  <img src="https://img.shields.io/github/stars/mohammadmehrani?style=for-the-badge&logo=github" alt="Stars" />
 </p>
 
 ## About Me
@@ -67,6 +67,10 @@
   <img loading="lazy" src="https://github-profile-summary-cards.vercel.app/api/cards/most-commit-language?username=mohammadmehrani&theme=github_dark" alt="Most commit language" />
 </p>
 
+<p align="center">
+  <img src="https://github-profile-trophy.vercel.app/?username=mohammadmehrani&theme=darkhub&no-frame=true&column=4&margin-w=15" alt="GitHub Trophies" />
+</p>
+
 ## ⚡ Extraordinary Automation Pipeline
 
 <p align="center">
@@ -80,7 +84,7 @@
 This profile is powered by an **Extraordinary Workflow System** combining **n8n** + **GitHub Actions** + **PostgreSQL** + **Redis** for intelligent automation:
 
 - **3D Contribution Graphs**: Auto-generated daily (06:00 & 18:00 UTC) with SVG optimization
-- **Blog Integration**: Fetches latest posts from [m-mehrani.ir](https://m-mehrani.ir) every 6 hours
+- **Blog Integration**: Fetches latest posts from [iodeck.ir](https://iodeck.ir) every 6 hours
 - **Activity Analytics**: Python-powered analysis of GitHub events, growth metrics, and trends
 - **Smart Notifications**: Telegram alerts for significant events and daily summaries
 - **State Management**: Redis caching + PostgreSQL historical snapshots for trend tracking
