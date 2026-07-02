@@ -14,7 +14,7 @@
   <a href="https://t.me/mohammad_mehrani">
     <img src="https://img.shields.io/badge/Telegram-mohammad__mehrani-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram" />
   </a>
-  <a href="https://m-mehrani.ir/">
+  <a href="https://iodeck.ir/">
     <img src="https://img.shields.io/badge/Blog-m--mehrani.ir-222222?style=for-the-badge&logo=hashnode&logoColor=white" alt="Blog" />
   </a>
   <a href="mailto:mehrani1992@gmail.com">
