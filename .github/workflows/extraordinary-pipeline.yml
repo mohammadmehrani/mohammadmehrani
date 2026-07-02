@@ -90,13 +90,20 @@ jobs:
             ird-
 
       - name: Remove old SVGs
-        run: rm -f profile-3d-contrib/*.svg
+        run: rm -f profile-3d-contrib/profile-*.svg
 
       - name: Generate 3D contribution graph
         uses: yoshi389111/github-profile-3d-contrib@0.7.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USERNAME: mohammadmehrani
+
+      - name: Generate xarthurx themes
+        uses: xarthurx/github-3d-profile@v1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          USERNAME: mohammadmehrani
+          SETTING_JSON: settings/theme-preview.json
 
       - name: Persist generated files
         run: |
