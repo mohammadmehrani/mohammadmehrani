@@ -1,8 +1,6 @@
 name: Latest Blog Post Workflow
 
 on:
-  schedule:
-    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       feed_url:
