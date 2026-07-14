@@ -6,7 +6,7 @@ on:
       feed_url:
         description: 'Blog RSS/Atom feed URL'
         required: false
-        default: 'https://iodeck.ir'
+        default: 'https://iodeck.ir/rss'
       max_posts:
         description: 'Maximum number of posts to show'
         required: false
@@ -27,10 +27,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check feed availability
+        id: check-feed
+        run: |
+          FEED_URL="${{ github.event.inputs.feed_url || 'https://iodeck.ir/rss' }}"
+          CONTENT_TYPE=$(curl -s -o /dev/null -w "%{content_type}" "$FEED_URL" 2>/dev/null || echo "")
+          if echo "$CONTENT_TYPE" | grep -qiE "xml|rss|atom|json"; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "Feed is valid: $CONTENT_TYPE"
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "No RSS feed found at $FEED_URL (content-type: $CONTENT_TYPE)"
+          fi
+
       - name: Pull in blog posts
+        if: steps.check-feed.outputs.valid == 'true'
         uses: gautamkrishnar/blog-post-workflow@master
         with:
-          feed_list: "${{ github.event.inputs.feed_url || 'https://iodeck.ir' }}"
+          feed_list: "${{ github.event.inputs.feed_url || 'https://iodeck.ir/rss' }}"
           max_post_count: "${{ github.event.inputs.max_posts || '5' }}"
           disable_item_validation: true
           gh_token: ${{ secrets.GITHUB_TOKEN }}
@@ -53,6 +67,6 @@ jobs:
             -d '{
               "event": "blog_posts_updated",
               "repository": "${{ github.repository }}",
-              "feed": "${{ github.event.inputs.feed_url || 'https://iodeck.ir' }}",
+              "feed": "${{ github.event.inputs.feed_url || 'https://iodeck.ir/rss' }}",
               "timestamp": "${{ github.event.repository.updated_at }}"
             }' || echo "Webhook notification skipped"

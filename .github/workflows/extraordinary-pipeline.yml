@@ -125,10 +125,22 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Check feed availability
+        id: check-feed
+        run: |
+          FEED_URL="https://iodeck.ir/rss"
+          CONTENT_TYPE=$(curl -s -o /dev/null -w "%{content_type}" "$FEED_URL" 2>/dev/null || echo "")
+          if echo "$CONTENT_TYPE" | grep -qiE "xml|rss|atom|json"; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "No RSS feed at $FEED_URL (content-type: $CONTENT_TYPE) - skipping"
+          fi
       - name: Update README with blog
+        if: steps.check-feed.outputs.valid == 'true'
         uses: gautamkrishnar/blog-post-workflow@master
         with:
-          feed_list: "https://iodeck.ir"
+          feed_list: "https://iodeck.ir/rss"
           max_post_count: 5
           disable_item_validation: true
           gh_token: ${{ secrets.GITHUB_TOKEN }}
