@@ -1,0 +1,115 @@
+{
+  "name": "📡 RSS Feed Generator - iodeck.ir",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "⏰ Schedule (6h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-600, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cron", "expression": "0 */6 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "webhook-trigger",
+      "name": "🔗 Webhook (manual)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-600, 0],
+      "parameters": {
+        "path": "iodeck-rss-generate",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-site",
+      "name": "🌐 Fetch iodeck.ir",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-350, 200],
+      "parameters": {
+        "url": "https://iodeck.ir",
+        "options": {
+          "timeout": 15000,
+          "followRedirect": true
+        }
+      }
+    },
+    {
+      "id": "scrape-content",
+      "name": "📝 Parse & Scrape Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-100, 200],
+      "parameters": {
+        "functionCode": "// Parse HTML and extract site content\nconst html = $input.first().json.body || '';\n\nconst items = [];\nconst titleMatch = html.match(/<title>(.*?)<\\/title>/i);\nconst siteTitle = titleMatch ? titleMatch[1] : 'iodeck.ir';\nconst now = new Date().toISOString();\n\n// Extract H2 sections as feed items\nconst h2Regex = /<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi;\nlet m;\nwhile ((m = h2Regex.exec(html)) !== null) {\n  const text = m[1].replace(/<[^>]*>/g, '').trim();\n  if (text && text.length > 3) {\n    items.push({\n      title: text,\n      description: 'Page section from iodeck.ir',\n      link: 'https://iodeck.ir',\n      pubDate: now\n    });\n  }\n}\n\n// Extract service cards\nconst cardRegex = /<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi;\nwhile ((m = cardRegex.exec(html)) !== null) {\n  const text = m[1].replace(/<[^>]*>/g, '').trim();\n  if (text && text.length > 3 && !items.find(i => i.title === text)) {\n    items.push({\n      title: text,\n      description: 'Service offered by iodeck.ir',\n      link: 'https://iodeck.ir/pages/services.html',\n      pubDate: now\n    });\n  }\n}\n\nreturn [{\n  json: {\n    feedTitle: siteTitle,\n    feedLink: 'https://iodeck.ir',\n    feedDesc: 'IODECK Digital Innovation - RSS Feed',\n    items: items.slice(0, 20)\n  }\n}];\n"
+      }
+    },
+    {
+      "id": "build-rss",
+      "name": "📄 Build RSS XML",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [150, 200],
+      "parameters": {
+        "functionCode": "const data = $input.first().json;\nconst items = data.items || [];\n\nlet rss = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n`;\nrss += `<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\\n`;\nrss += `<channel>\\n`;\nrss += `  <title>${data.feedTitle}</title>\\n`;\nrss += `  <link>${data.feedLink}</link>\\n`;\nrss += `  <description>${data.feedDesc}</description>\\n`;\nrss += `  <atom:link href=\"https://iodeck.ir/rss\" rel=\"self\" type=\"application/rss+xml\"/>\\n`;\nrss += `  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\\n`;\n\nitems.forEach(item => {\n  rss += `  <item>\\n`;\n  rss += `    <title>${item.title}</title>\\n`;\n  rss += `    <link>${item.link}</link>\\n`;\n  rss += `    <description>${item.description || ''}</description>\\n`;\n  rss += `    <pubDate>${new Date(item.pubDate).toUTCString()}</pubDate>\\n`;\n  rss += `  </item>\\n`;\n});\n\nrss += `</channel>\\n</rss>`;\n\nreturn [{ json: { rss: rss } }];\n"
+      }
+    },
+    {
+      "id": "save-rss",
+      "name": "💾 Save RSS to File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [400, 200],
+      "parameters": {
+        "fileName": "/backup/scripts/rss/iodeck-feed.xml",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "webhook-response",
+      "name": "✅ Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [400, 0],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      }
+    },
+    {
+      "id": "redis-cache",
+      "name": "🗃️ Cache RSS in Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 2,
+      "position": [400, 400],
+      "parameters": {
+        "operation": "set",
+        "key": "rss:iodeck:feed",
+        "value": "={{ $json.rss }}"
+      }
+    }
+  ],
+  "connections": {
+    "schedule-trigger": { "main": [[ { "node": "fetch-site", "type": "main", "index": 0 } ]] },
+    "webhook-trigger": { "main": [[ { "node": "fetch-site", "type": "main", "index": 0 } ]] },
+    "fetch-site": { "main": [[ { "node": "scrape-content", "type": "main", "index": 0 } ]] },
+    "scrape-content": { "main": [[ { "node": "build-rss", "type": "main", "index": 0 } ]] },
+    "build-rss": {
+      "main": [[
+        { "node": "save-rss", "type": "main", "index": 0 },
+        { "node": "redis-cache", "type": "main", "index": 0 },
+        { "node": "webhook-response", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["automation", "rss", "iodeck", "scraping"]
+}

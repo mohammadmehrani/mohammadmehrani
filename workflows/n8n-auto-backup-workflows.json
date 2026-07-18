@@ -1,0 +1,88 @@
+{
+  "name": "💾 Auto Backup Workflows to Git",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "⏰ Daily at 03:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-400, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cron", "expression": "0 3 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "list-workflows",
+      "name": "📋 List All Workflows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-150, 300],
+      "parameters": {
+        "url": "http://n8n:5678/rest/workflows",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeader": true,
+        "headerAuthHeaderName": "X-N8N-API-KEY",
+        "headerAuthHeaderValue": "={{ $env.N8N_API_KEY }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "extract-workflows",
+      "name": "🔍 Extract & Export All",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "parameters": {
+        "functionCode": "const workflows = $input.first().json.data || [];\nconst results = [];\n\nworkflows.forEach(wf => {\n  const name = (wf.name || '').replace(/[^a-zA-Z0-9-_\\u0600-\\u06FF]/g, '_');\n  results.push({\n    json: {\n      id: wf.id,\n      name: wf.name,\n      safeName: name,\n      updatedAt: wf.updatedAt,\n      active: wf.active,\n      data: JSON.stringify(wf, null, 2)\n    }\n  });\n});\n\nreturn results;\n"
+      }
+    },
+    {
+      "id": "export-to-file",
+      "name": "💾 Write Each Workflow",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [350, 300],
+      "parameters": {
+        "fileName": "=/backup/workflows/{{ $json.safeName }}-{{ $json.id }}.json",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "generate-summary",
+      "name": "📄 Generate Summary",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [600, 300],
+      "parameters": {
+        "functionCode": "const exported = $input.all();\nlet summary = '# n8n Workflow Backup\\n\\n';\nsummary += `Backup Time: ${new Date().toISOString()}\\n`;\nsummary += `Total Workflows: ${exported.length}\\n\\n`;\nsummary += '| # | Name | Active | Last Updated |\\n';\nsummary += '|---|---|---|---|\\n';\n\nexported.forEach((wf, i) => {\n  summary += `| ${i+1} | ${wf.json.name} | ${wf.json.active ? '✅' : '❌'} | ${wf.json.updatedAt || 'N/A'} |\\n`;\n});\n\nreturn [{ json: { summary: summary, count: exported.length } }];\n"
+      }
+    },
+    {
+      "id": "save-markdown",
+      "name": "💾 Write Summary",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "parameters": {
+        "fileName": "=/backup/workflows/BACKUP_README.md",
+        "dataPropertyName": "data",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "schedule-trigger": { "main": [[ { "node": "list-workflows", "type": "main", "index": 0 } ]] },
+    "list-workflows": { "main": [[ { "node": "extract-workflows", "type": "main", "index": 0 } ]] },
+    "extract-workflows": { "main": [[ { "node": "export-to-file", "type": "main", "index": 0 } ]] },
+    "export-to-file": { "main": [[ { "node": "generate-summary", "type": "main", "index": 0 } ]] },
+    "generate-summary": { "main": [[ { "node": "save-markdown", "type": "main", "index": 0 } ]] }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["backup", "devops", "automation"]
+}

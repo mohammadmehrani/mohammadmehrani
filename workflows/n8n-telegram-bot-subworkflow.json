@@ -36,7 +36,7 @@
       "typeVersion": 1,
       "position": [250, 100],
       "parameters": {
-        "functionCode": "return {\n  text: `👋 *Welcome to the Extraordinary Profile Bot!*\\n\\nI monitor and analyze GitHub activity for *mohammadmehrani*.\\n\\n📊 *Available Commands:*\\n/stats - Current profile stats\\n/activity - Recent activity analysis\\n/streak - Contribution streak\\n/languages - Top programming languages\\n/help - Show this help\\n\\n⚡ Powered by n8n Extraordinary Workflow Engine`\n};"
+        "functionCode": "return {\n  text: `👋 *Welcome to the Extraordinary Profile Bot!*\\n\\nI monitor and analyze GitHub activity for *maddixmhn*.\\n\\n📊 *Available Commands:*\\n/stats - Current profile stats\\n/activity - Recent activity analysis\\n/streak - Contribution streak\\n/languages - Top programming languages\\n/help - Show this help\\n\\n⚡ Powered by n8n Extraordinary Workflow Engine`\n};"
       }
     },
     {
@@ -47,7 +47,7 @@
       "position": [250, 250],
       "parameters": {
         "method": "GET",
-        "url": "https://api.github.com/users/mohammadmehrani",
+        "url": "https://api.github.com/users/maddixmhn",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeader": true,
@@ -87,7 +87,7 @@
       "position": [250, 700],
       "parameters": {
         "method": "GET",
-        "url": "https://api.github.com/users/mohammadmehrani/repos?per_page=100&type=owner",
+        "url": "https://api.github.com/users/maddixmhn/repos?per_page=100&type=owner",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeader": true,

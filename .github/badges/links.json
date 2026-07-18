@@ -1,5 +1,5 @@
 {
-  "followers": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mohammadmehrani/mohammadmehrani/main/.github/badges/profile.json&label=Followers&query=$.followers&color=blue&style=for-the-badge",
-  "repos": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mohammadmehrani/mohammadmehrani/main/.github/badges/profile.json&label=Repos&query=$.repos&color=green&style=for-the-badge",
-  "updated": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mohammadmehrani/mohammadmehrani/main/.github/badges/profile.json&label=Updated&query=$.updated&color=orange&style=for-the-badge"
+  "followers": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/maddixmhn/maddixmhn/main/.github/badges/profile.json&label=Followers&query=$.followers&color=blue&style=for-the-badge",
+  "repos": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/maddixmhn/maddixmhn/main/.github/badges/profile.json&label=Repos&query=$.repos&color=green&style=for-the-badge",
+  "updated": "https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/maddixmhn/maddixmhn/main/.github/badges/profile.json&label=Updated&query=$.updated&color=orange&style=for-the-badge"
 }

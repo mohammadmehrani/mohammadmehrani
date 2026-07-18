@@ -36,7 +36,7 @@ jobs:
         id: github
         run: |
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://api.github.com/users/mohammadmehrani" \
+            "https://api.github.com/users/maddixmhn" \
             -H "Accept: application/vnd.github.v3+json" \
             --connect-timeout 10 --max-time 15)
           echo "github_http_status=$HTTP_CODE" >> $GITHUB_OUTPUT
@@ -86,7 +86,7 @@ jobs:
 
       - name: Commit health status
         run: |
-          git config user.name "mohammadmehrani"
+          git config user.name "maddixmhn"
           git config user.email "mehrani1992@gmail.com"
           git add .github/badges/health.json .github/badges/health-report.json 2>/dev/null || true
           if git diff --staged --quiet; then

@@ -44,7 +44,7 @@ jobs:
       - uses: yoshi389111/github-profile-3d-contrib@0.7.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USERNAME: mohammadmehrani
+          USERNAME: maddixmhn
 
       - name: Optimize SVGs
         run: |
@@ -69,7 +69,7 @@ jobs:
 
       - name: Commit & Push
         run: |
-          git config user.name "mohammadmehrani"
+          git config user.name "maddixmhn"
           git config user.email "mehrani1992@gmail.com"
           git add -A .
           if git diff --staged --quiet; then

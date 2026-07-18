@@ -94,18 +94,18 @@ jobs:
         uses: yoshi389111/github-profile-3d-contrib@0.7.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USERNAME: mohammadmehrani
+          USERNAME: maddixmhn
 
       - name: Generate xarthurx themes
         uses: xarthurx/github-3d-profile@v1.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USERNAME: mohammadmehrani
+          USERNAME: maddixmhn
           SETTING_JSON: settings/theme-preview.json
 
       - name: Persist generated files
         run: |
-          git config user.name "mohammadmehrani"
+          git config user.name "maddixmhn"
           git config user.email "mehrani1992@gmail.com"
           git add profile-3d-contrib/
           if git diff --staged --quiet; then

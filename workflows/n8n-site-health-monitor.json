@@ -1,0 +1,139 @@
+{
+  "name": "🩺 Site Health Monitor - Portfolio",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "⏰ Every 2 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-500, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cron", "expression": "0 */2 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "github-webhook",
+      "name": "🔗 GitHub Alert Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-500, 0],
+      "parameters": {
+        "path": "site-health-alert",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "site-list",
+      "name": "📋 Site List",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-250, 300],
+      "parameters": {
+        "functionCode": "return [\n  { json: { url: 'https://drkimiah.ir', name: 'Dr Kimia Habibi' } },\n  { json: { url: 'https://surinsf.com', name: 'Surin Sefid' } },\n  { json: { url: 'https://tehransuzuki.ir', name: 'Tehran Suzuki' } },\n  { json: { url: 'https://netagha.ir', name: 'Netagha' } },\n  { json: { url: 'https://alefparvaz.com', name: 'Alef Parvaz' } },\n  { json: { url: 'https://iodeck.ir', name: 'IoDeck' } }\n];\n"
+      }
+    },
+    {
+      "id": "loop-sites",
+      "name": "🔄 Loop Sites",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "check-http",
+      "name": "🌐 Check HTTP Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [250, 300],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "method": "GET",
+        "options": {
+          "timeout": 10000,
+          "followRedirect": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "check-ssl",
+      "name": "🔒 Check SSL Expiry",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "functionCode": "const result = $input.first().json;\nconst siteName = result.url || result.json?.url;\nconst httpCode = result.statusCode || 0;\nconst isError = !!result.error;\n\n// Extract domain for SSL check\nconst urlObj = new URL(siteName || '');\nconst domain = urlObj.hostname;\n\nconst status = isError ? 'DOWN' : (httpCode >= 200 && httpCode < 400 ? 'UP' : 'DEGRADED');\n\nreturn [{\n  json: {\n    name: result.name || domain,\n    url: siteName,\n    status: status,\n    httpCode: httpCode,\n    domain: domain,\n    checkedAt: new Date().toISOString(),\n    healthy: status === 'UP'\n  }\n}];\n"
+      }
+    },
+    {
+      "id": "report-status",
+      "name": "📊 Report Status",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "parameters": {
+        "functionCode": "const results = $input.all();\nconst healthy = results.filter(r => r.json.healthy);\nconst down = results.filter(r => !r.json.healthy);\n\nlet msg = '🩺 Site Health Report\\n';\nmsg += `Checked: ${results.length} sites\\n`;\nmsg += `✅ Healthy: ${healthy.length}\\n`;\n\nif (down.length > 0) {\n  msg += `❌ Issues:\\n`;\n  down.forEach(d => {\n    msg += `  - ${d.json.name}: ${d.json.status} (${d.json.httpCode})\\n`;\n  });\n}\n\nreturn [{ json: { message: msg, healthy: healthy.length, total: results.length, down: down.map(d => d.json) } }];\n"
+      }
+    },
+    {
+      "id": "save-redis",
+      "name": "🗃️ Save to Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "set",
+        "key": "health:sites:latest",
+        "value": "={{ JSON.stringify($json) }}"
+      }
+    },
+    {
+      "id": "telegram-alert",
+      "name": "📱 Telegram Alert (if down)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 150],
+      "parameters": {
+        "functionCode": "const report = $input.first().json;\nif (report.down && report.down.length > 0) {\n  return [{ json: report }];\n}\nreturn null;\n"
+      }
+    },
+    {
+      "id": "send-telegram",
+      "name": "✉️ Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1250, 150],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      }
+    }
+  ],
+  "connections": {
+    "schedule-trigger": { "main": [[ { "node": "site-list", "type": "main", "index": 0 } ]] },
+    "github-webhook": { "main": [[ { "node": "site-list", "type": "main", "index": 0 } ]] },
+    "site-list": { "main": [[ { "node": "loop-sites", "type": "main", "index": 0 } ]] },
+    "loop-sites": { "main": [[ { "node": "check-http", "type": "main", "index": 0 } ]] },
+    "check-http": { "main": [[ { "node": "check-ssl", "type": "main", "index": 0 } ]] },
+    "check-ssl": { "main": [[ { "node": "report-status", "type": "main", "index": 0 } ]] },
+    "report-status": {
+      "main": [[
+        { "node": "save-redis", "type": "main", "index": 0 },
+        { "node": "telegram-alert", "type": "main", "index": 0 }
+      ]]
+    },
+    "telegram-alert": { "main": [[ { "node": "send-telegram", "type": "main", "index": 0 } ]] }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["monitoring", "health", "portfolio", "devops"]
+}

@@ -12,11 +12,11 @@ $events = @{
         body = @{
             ref = "refs/heads/main"
             repository = @{
-                full_name = "mohammadmehrani/mohammadmehrani"
-                name = "mohammadmehrani"
-                owner = @{ login = "mohammadmehrani" }
+                full_name = "maddixmhn/maddixmhn"
+                name = "maddixmhn"
+                owner = @{ login = "maddixmhn" }
             }
-            sender = @{ login = "mohammadmehrani" }
+            sender = @{ login = "maddixmhn" }
             commits = @(
                 @{ message = "test: workflow simulation"; sha = "abc123" }
             )
@@ -28,9 +28,9 @@ $events = @{
         body = @{
             action = "created"
             repository = @{
-                full_name = "mohammadmehrani/mohammadmehrani"
-                name = "mohammadmehrani"
-                owner = @{ login = "mohammadmehrani" }
+                full_name = "maddixmhn/maddixmhn"
+                name = "maddixmhn"
+                owner = @{ login = "maddixmhn" }
                 stargazers_count = 5
             }
             sender = @{ login = "test-user"; html_url = "https://github.com/test-user" }
@@ -44,14 +44,14 @@ $events = @{
             issue = @{
                 title = "Test Issue"
                 body = "This is a test issue from the webhook simulator"
-                html_url = "https://github.com/mohammadmehrani/mohammadmehrani/issues/1"
+                html_url = "https://github.com/maddixmhn/maddixmhn/issues/1"
                 state = "open"
                 created_at = (Get-Date -Format "o")
             }
             repository = @{
-                full_name = "mohammadmehrani/mohammadmehrani"
+                full_name = "maddixmhn/maddixmhn"
             }
-            sender = @{ login = "mohammadmehrani" }
+            sender = @{ login = "maddixmhn" }
         }
     }
 }
